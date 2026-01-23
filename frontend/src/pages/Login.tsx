@@ -250,11 +250,7 @@ function SignupModal({ onClose }: SignupModalProps) {
 
     // TODO: replace with real API call or navigation
     setTimeout(() => {
-      alert(
-        `✅ ACCOUNT CREATED!\n\nUSER: ${username}\nEMAIL: ${email}\n2FA: ${
-          enable2FA ? "ON" : "OFF"
-        }`,
-      );
+      ("/dashboard");
       setLoading(false);
       onClose();
     }, 1000);
@@ -438,7 +434,7 @@ export default function Login() {
 
     // TODO: replace with navigation or real login call
     setTimeout(() => {
-      alert(`✅ LOGIN SUCCESS!\n\nEMAIL: ${email}\n\nREDIRECTING...`);
+      ("/dashboard");
       setLoading(false);
       // e.g., use navigate("/dashboard") if using react-router
     }, 1000);
