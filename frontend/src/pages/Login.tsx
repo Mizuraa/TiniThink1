@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Shield, Check, X, User, Lock, Mail } from "lucide-react";
 
-// CAPTCHA Component
-function CaptchaVerification({
-  onVerify,
-  verified,
-}: {
+type CaptchaProps = {
   onVerify: (ok: boolean) => void;
   verified: boolean;
-}) {
+};
+
+// CAPTCHA Component
+function CaptchaVerification({ onVerify, verified }: CaptchaProps) {
   const [captchaText, setCaptchaText] = useState("");
   const [userInput, setUserInput] = useState("");
 
@@ -42,9 +41,7 @@ function CaptchaVerification({
         <div className="bg-purple-950 border-4 border-purple-500 px-4 py-3 pixel-box flex items-center justify-center min-w-35">
           <span
             className="text-xl pixel-font tracking-widest text-purple-200 select-none"
-            style={{
-              letterSpacing: "0.3em",
-            }}
+            style={{ letterSpacing: "0.3em" }}
           >
             {captchaText}
           </span>
@@ -152,16 +149,14 @@ function PasswordStrength({ password }: { password: string }) {
   );
 }
 
-// Terms Modal
-function TermsModal({
-  isOpen,
-  onClose,
-  onAccept,
-}: {
+type TermsModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onAccept: () => void;
-}) {
+};
+
+// Terms Modal
+function TermsModal({ isOpen, onClose, onAccept }: TermsModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -176,8 +171,11 @@ function TermsModal({
           </p>
         </div>
         <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm text-purple-200 leading-relaxed pixel-font">
-          {/* terms text left as-is (shortened if needed) */}
-          {/* ... */}
+          {/* Put your terms text here */}
+          <p>
+            Example terms: By using TINITHINK you agree to the processing of
+            your data for educational and personalization purposes.
+          </p>
         </div>
         <div className="p-6 border-t-8 border-purple-500 flex gap-4">
           <button
@@ -198,8 +196,12 @@ function TermsModal({
   );
 }
 
+type SignupModalProps = {
+  onClose: () => void;
+};
+
 // Signup Modal
-function SignupModal({ onClose }: { onClose: () => void }) {
+function SignupModal({ onClose }: SignupModalProps) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -245,6 +247,8 @@ function SignupModal({ onClose }: { onClose: () => void }) {
     }
 
     setLoading(true);
+
+    // TODO: replace with real API call or navigation
     setTimeout(() => {
       alert(
         `✅ ACCOUNT CREATED!\n\nUSER: ${username}\nEMAIL: ${email}\n2FA: ${
@@ -431,9 +435,12 @@ export default function Login() {
     }
 
     setLoading(true);
+
+    // TODO: replace with navigation or real login call
     setTimeout(() => {
       alert(`✅ LOGIN SUCCESS!\n\nEMAIL: ${email}\n\nREDIRECTING...`);
       setLoading(false);
+      // e.g., use navigate("/dashboard") if using react-router
     }, 1000);
   };
 
