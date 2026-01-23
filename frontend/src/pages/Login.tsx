@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Shield, Check, X, User, Lock, Mail } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type CaptchaProps = {
   onVerify: (ok: boolean) => void;
@@ -31,6 +32,8 @@ function CaptchaVerification({ onVerify, verified }: CaptchaProps) {
     const isCorrect = userInput.toUpperCase() === captchaText;
     onVerify(isCorrect);
   };
+
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-2">
@@ -220,6 +223,8 @@ function SignupModal({ onClose }: SignupModalProps) {
     return hasSpecial && hasNumber && hasCapitalFirst && hasLength;
   };
 
+  const navigate = useNavigate();
+
   const handleSignup = () => {
     if (!username.trim()) {
       alert("⚠️ ENTER USERNAME");
@@ -248,9 +253,8 @@ function SignupModal({ onClose }: SignupModalProps) {
 
     setLoading(true);
 
-    // TODO: replace with real API call or navigation
     setTimeout(() => {
-      ("/dashboard");
+      navigate("/dashboard");
       setLoading(false);
       onClose();
     }, 1000);
@@ -414,6 +418,8 @@ export default function Login() {
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const navigate = useNavigate();
+
   const handleLogin = () => {
     if (!email.trim()) {
       alert("⚠️ ENTER EMAIL");
@@ -432,11 +438,9 @@ export default function Login() {
 
     setLoading(true);
 
-    // TODO: replace with navigation or real login call
     setTimeout(() => {
-      ("/dashboard");
+      navigate("/dashboard");
       setLoading(false);
-      // e.g., use navigate("/dashboard") if using react-router
     }, 1000);
   };
 
