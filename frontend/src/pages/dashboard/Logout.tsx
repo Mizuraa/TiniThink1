@@ -6,7 +6,7 @@ function Logout() {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      alert("✓ LOGGED OUT SUCCESSFULLY");
+      alert("LOGGED OUT SUCCESSFULLY");
       navigate("/login", { replace: true });
     }, 800);
 
