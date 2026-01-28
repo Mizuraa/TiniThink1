@@ -48,112 +48,129 @@ export function Reviewer() {
 
   return (
     <div className="w-full flex items-center justify-center">
-      <div className="w-full max-w-full lg:max-w-2xl p-4 sm:p-6 flex flex-col bg-black/70 rounded-xl overflow-hidden">
-        <h2 className="text-2xl font-bold text-[#00ffff] mb-6 text-left">
-          Reviewer
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        .pixel-font { font-family: 'Press Start 2P', cursive; }
+        .pixel-box { border-radius: 0; }
+        .pixel-shadow { box-shadow: 4px 4px 0 rgba(139, 92, 246, 0.4), 6px 6px 0 rgba(88, 28, 135, 0.2); }
+        input::placeholder, textarea::placeholder { font-family: 'Press Start 2P', cursive; font-size: 0.5rem; }
+        @media (min-width: 640px) { 
+          input::placeholder, textarea::placeholder { font-size: 0.6rem; } 
+        }
+      `}</style>
+
+      <div className="w-full max-w-full lg:max-w-2xl p-4 sm:p-6 flex flex-col bg-purple-950/70 pixel-box border-2 sm:border-4 border-purple-500 pixel-shadow overflow-hidden">
+        <h2 className="text-lg sm:text-2xl pixel-font text-purple-300 mb-4 sm:mb-6 text-left">
+          REVIEWER
         </h2>
 
-        {/* inputs row */}
-        <div className="mb-3 flex flex-col sm:flex-row gap-3 w-full">
+        {/* Input Row */}
+        <div className="mb-3 flex flex-col gap-3 w-full">
           <input
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            placeholder="Term"
-            className="px-3 py-2 rounded bg-gray-800 text-white w-full sm:flex-1"
+            placeholder="TERM"
+            className="px-3 py-3 pixel-box bg-purple-950/50 border-2 border-purple-500 text-white pixel-font text-[10px] sm:text-xs w-full focus:outline-none"
           />
           <input
             value={definition}
             onChange={(e) => setDefinition(e.target.value)}
-            placeholder="Definition"
-            className="px-3 py-2 rounded bg-gray-800 text-white w-full sm:flex-1"
+            placeholder="DEFINITION"
+            className="px-3 py-3 pixel-box bg-purple-950/50 border-2 border-purple-500 text-white pixel-font text-[10px] sm:text-xs w-full focus:outline-none"
           />
           <button
             onClick={addItem}
-            className="px-4 py-2 bg-blue-600 text-white rounded font-bold whitespace-nowrap"
+            className="w-full px-4 py-3 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-400 text-white pixel-box pixel-font text-[10px] sm:text-xs min-h-[44px]"
           >
-            Add
+            ► ADD TERM
           </button>
         </div>
 
-        {/* highlight + underline controls */}
-        <div className="flex flex-col sm:flex-row gap-3 my-3 w-full">
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-gray-300 font-medium text-sm">
-              Title highlight:
+        {/* Highlight Controls */}
+        <div className="flex flex-col gap-3 my-3 w-full">
+          <div className="bg-purple-900/50 pixel-box border-2 border-purple-600 p-3">
+            <span className="text-purple-300 pixel-font text-[9px] sm:text-[10px] block mb-2">
+              TITLE HIGHLIGHT:
             </span>
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                onClick={() => setNextHighlightColor(c)}
-                className="rounded-full border"
-                style={{
-                  width: 22,
-                  height: 22,
-                  background: c,
-                  borderColor: nextHighlightColor === c ? "#333333" : "#aaaaaa",
-                }}
-                title={`Pick color ${c}`}
-              />
-            ))}
-            {nextHighlightColor && (
-              <button
-                className="px-1 text-xs bg-white text-black rounded border border-gray-400"
-                onClick={() => setNextHighlightColor(undefined)}
-                title="Remove highlight"
-              >
-                ×
-              </button>
-            )}
+            <div className="flex flex-wrap gap-2 items-center">
+              {COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setNextHighlightColor(c)}
+                  className="pixel-box border-2"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    background: c,
+                    borderColor: nextHighlightColor === c ? "#fff" : "#666",
+                  }}
+                  title={`Pick color ${c}`}
+                />
+              ))}
+              {nextHighlightColor && (
+                <button
+                  className="px-2 py-1 text-[9px] bg-white text-black pixel-box border-2 border-gray-400 pixel-font min-w-[32px] min-h-[32px]"
+                  onClick={() => setNextHighlightColor(undefined)}
+                  title="Remove highlight"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
+
           <button
-            className="px-4 py-1 rounded font-bold border self-start"
+            className="px-4 py-3 pixel-box border-2 border-purple-500 bg-purple-900/50 pixel-font text-[10px] sm:text-xs text-purple-300 min-h-[44px]"
             style={{
               textDecoration: nextUnderline ? "underline" : "none",
             }}
             onClick={() => setNextUnderline((u) => !u)}
-            title="Toggle Underline for Definition"
+            title="Toggle Underline"
           >
-            Underline
+            {nextUnderline ? "UNDERLINE: ON" : "UNDERLINE: OFF"}
           </button>
         </div>
 
-        <h3 className="font-semibold mb-4 text-left">Review Terms</h3>
+        <h3 className="pixel-font text-sm sm:text-base text-purple-300 mb-4 text-left">
+          REVIEW TERMS
+        </h3>
 
-        {/* list */}
-        <div className="space-y-4 w-full">
+        {/* List */}
+        <div className="space-y-3 sm:space-y-4 w-full">
           {reviewList.length === 0 && (
-            <div className="text-gray-400 text-left">No terms added yet.</div>
+            <div className="text-purple-400 text-left pixel-font text-[10px] sm:text-xs p-4 bg-purple-900/50 pixel-box border-2 border-purple-600">
+              NO TERMS YET
+            </div>
           )}
           {reviewList.map((item, idx) => (
             <div
               key={idx}
-              className="flex flex-col bg-white/5 rounded px-4 py-3 w-full relative"
+              className="flex flex-col bg-purple-950/80 pixel-box border-2 sm:border-4 border-purple-500 px-3 sm:px-4 py-3 w-full relative pixel-shadow"
               style={{ alignItems: "flex-start" }}
             >
               <button
                 title="Remove"
-                className="absolute right-2 top-2 text-red-400 px-2 text-lg font-bold"
+                className="absolute right-2 top-2 text-red-400 px-2 py-1 text-sm pixel-font min-w-[32px] min-h-[32px] bg-red-900/50 pixel-box border-2 border-red-600"
                 onClick={() => removeItem(idx)}
               >
                 ×
               </button>
-              <div className="flex flex-wrap items-center gap-2 pr-6">
+              <div className="flex flex-wrap items-center gap-2 pr-10 sm:pr-12">
                 <span
-                  className="font-bold text-lg text-white"
+                  className="pixel-font text-sm sm:text-base text-white"
                   style={{
                     color: item.highlightColor ?? "#00ffff",
                     background: item.highlightColor
                       ? item.highlightColor + "44"
                       : undefined,
-                    padding: "1px 6px",
-                    borderRadius: 6,
+                    padding: "2px 6px",
                   }}
                 >
                   {item.term}
                 </span>
-                <span>-</span>
+                <span className="pixel-font text-purple-400">-</span>
                 <span
-                  className="font-medium text-white/90"
+                  className="pixel-font text-[10px] sm:text-xs text-white/90"
                   style={{
                     textDecoration: item.underline ? "underline" : "none",
                     textDecorationColor: item.underline ? "#fff" : undefined,
@@ -169,3 +186,4 @@ export function Reviewer() {
     </div>
   );
 }
+export default Reviewer;

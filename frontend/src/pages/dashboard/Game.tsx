@@ -6,7 +6,7 @@ type Q = { id: number; text: string; choices: Choice[]; correctId: number };
 const SAMPLE_QUESTIONS: Q[] = [
   {
     id: 1,
-    text: "Which one is 2 + 2?",
+    text: "WHAT IS 2 + 2?",
     choices: [
       { id: 11, text: "3" },
       { id: 12, text: "4" },
@@ -17,23 +17,23 @@ const SAMPLE_QUESTIONS: Q[] = [
   },
   {
     id: 2,
-    text: "Which animal barks?",
+    text: "WHICH ANIMAL BARKS?",
     choices: [
-      { id: 21, text: "Cat" },
-      { id: 22, text: "Dog" },
-      { id: 23, text: "Cow" },
-      { id: 24, text: "Bird" },
+      { id: 21, text: "CAT" },
+      { id: 22, text: "DOG" },
+      { id: 23, text: "COW" },
+      { id: 24, text: "BIRD" },
     ],
     correctId: 22,
   },
   {
     id: 3,
-    text: "Which color is the sky on a clear day?",
+    text: "SKY COLOR ON CLEAR DAY?",
     choices: [
-      { id: 31, text: "Green" },
-      { id: 32, text: "Blue" },
-      { id: 33, text: "Red" },
-      { id: 34, text: "Brown" },
+      { id: 31, text: "GREEN" },
+      { id: 32, text: "BLUE" },
+      { id: 33, text: "RED" },
+      { id: 34, text: "BROWN" },
     ],
     correctId: 32,
   },
@@ -44,10 +44,7 @@ export default function Game() {
   const [index, setIndex] = useState(0);
   const [lives, setLives] = useState(3);
   const [selected, setSelected] = useState<number | null>(null);
-  const [openedDoorId, setOpenedDoorId] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [zoom, setZoom] = useState(false);
-  const [shakeDoorId, setShakeDoorId] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
 
   const current = questions[index];
@@ -61,19 +58,18 @@ export default function Game() {
   function handleChoose(choiceId: number) {
     if (isAnimating || finished) return;
     setSelected(choiceId);
+    setIsAnimating(true);
+
+    // Haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
 
     const isCorrect = choiceId === current.correctId;
 
     if (isCorrect) {
-      setIsAnimating(true);
-      setOpenedDoorId(choiceId);
-      setTimeout(() => setZoom(true), 220);
-      setTimeout(() => {
-        advanceQuestion();
-      }, 900);
+      setTimeout(() => advanceQuestion(), 500);
     } else {
-      setShakeDoorId(choiceId);
-      setTimeout(() => setShakeDoorId(null), 500);
       setLives((s) => {
         const next = Math.max(0, s - 1);
         if (next === 0) {
@@ -81,14 +77,15 @@ export default function Game() {
         }
         return next;
       });
-      setTimeout(() => setSelected(null), 600);
+      setTimeout(() => {
+        setSelected(null);
+        setIsAnimating(false);
+      }, 600);
     }
   }
 
   function advanceQuestion() {
     setIsAnimating(false);
-    setOpenedDoorId(null);
-    setZoom(false);
     setSelected(null);
     const nextIndex = index + 1;
     if (nextIndex >= questions.length) {
@@ -100,13 +97,20 @@ export default function Game() {
 
   if (!current || finished) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-[#111111] to-[#060606] text-white p-6">
-        <div className="max-w-2xl w-full text-center">
-          <h2 className="text-3xl font-bold mb-4 text-[#00ffff]">
-            Run Finished
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-950 to-indigo-950 text-white p-4 sm:p-6">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+          .pixel-font { font-family: 'Press Start 2P', cursive; }
+          .pixel-box { border-radius: 0; }
+          .pixel-shadow { box-shadow: 6px 6px 0 rgba(139, 92, 246, 0.5), 8px 8px 0 rgba(88, 28, 135, 0.3); }
+        `}</style>
+
+        <div className="max-w-md sm:max-w-2xl w-full text-center bg-purple-950/80 pixel-box border-4 sm:border-8 border-purple-500 p-6 sm:p-8 pixel-shadow">
+          <h2 className="text-xl sm:text-3xl pixel-font mb-4 text-cyan-300">
+            GAME OVER
           </h2>
-          <p className="text-gray-300 mb-6">
-            {lives > 0 ? "You completed the run!" : "You ran out of lives!"}
+          <p className="text-purple-300 mb-6 pixel-font text-[10px] sm:text-sm">
+            {lives > 0 ? "YOU COMPLETED!" : "NO LIVES LEFT!"}
           </p>
           <button
             onClick={() => {
@@ -115,9 +119,9 @@ export default function Game() {
               setFinished(false);
               setSelected(null);
             }}
-            className="px-6 py-3 rounded bg-[#ff69b4] text-black font-bold hover:scale-105 transition"
+            className="w-full sm:w-auto px-6 py-4 pixel-box bg-pink-600 border-4 border-pink-400 text-white pixel-font text-xs sm:text-sm min-h-[44px]"
           >
-            Play Again
+            ► PLAY AGAIN
           </button>
         </div>
       </div>
@@ -125,110 +129,70 @@ export default function Game() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-linear-to-b from-[#111] to-[#050505] p-6"
-      style={{ perspective: 1200 }}
-    >
-      <div
-        className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl relative"
-        style={{
-          transform: zoom ? "scale(1.18) translateZ(0)" : "scale(1)",
-          transition: "transform 420ms ease-out",
-        }}
-      >
-        <div className="flex justify-between items-center mb-6">
-          <div className="text-sm text-gray-300">
-            Question {index + 1} / {questions.length}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-950 to-indigo-950 p-4 sm:p-6">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        .pixel-font { font-family: 'Press Start 2P', cursive; }
+        .pixel-box { border-radius: 0; }
+        .pixel-shadow { box-shadow: 4px 4px 0 rgba(139, 92, 246, 0.4), 6px 6px 0 rgba(88, 28, 135, 0.2); }
+      `}</style>
+
+      <div className="w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl">
+        <div className="flex justify-between items-center mb-4 sm:mb-6 pixel-font text-[10px] sm:text-sm text-purple-300">
+          <div>
+            Q {index + 1} / {questions.length}
           </div>
-          <div className="text-sm text-gray-300">
-            Lives: <span className="font-mono text-white">{lives}</span>
+          <div>
+            LIVES: <span className="text-pink-400">{"❤️".repeat(lives)}</span>
           </div>
         </div>
 
-        <div className="bg-neutral-900 text-white rounded-xl p-5 sm:p-6 mb-6 shadow-lg">
-          <h3 className="text-lg sm:text-xl font-bold text-[#00ffff]">
+        <div className="bg-purple-950 text-white pixel-box border-2 sm:border-4 border-purple-500 p-4 sm:p-6 mb-6 pixel-shadow">
+          <h3 className="text-sm sm:text-lg pixel-font text-cyan-300 text-center leading-relaxed">
             {current.text}
           </h3>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:gap-6 place-items-center">
-          {current.choices.map((choice, i) => {
-            const isOpen = openedDoorId === choice.id;
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 place-items-center">
+          {current.choices.map((choice) => {
             const isSelected = selected === choice.id;
-            const isShaking = shakeDoorId === choice.id;
-            const origin = i % 2 === 0 ? "left" : "right";
-            const swingDeg = i % 2 === 0 ? -100 : 100;
-            const rotateY = isOpen ? swingDeg : 0;
-            const doorKey = `door-${choice.id}`;
+            const isCorrect = choice.id === current.correctId;
+            const showResult = isSelected && isAnimating;
 
             return (
-              <div
-                key={doorKey}
-                className="w-36 h-44 sm:w-44 sm:h-52 relative transform-style-preserve-3d"
+              <button
+                key={choice.id}
+                onClick={() => handleChoose(choice.id)}
+                disabled={isAnimating}
+                className={`
+                  w-full min-h-[100px] sm:min-h-[120px] 
+                  pixel-box border-4 
+                  flex items-center justify-center 
+                  text-white pixel-font text-[10px] sm:text-xs 
+                  transition-all active:scale-95
+                  min-w-[44px]
+                  ${
+                    showResult && isCorrect
+                      ? "bg-green-600 border-green-400 pixel-shadow"
+                      : showResult
+                        ? "bg-red-600 border-red-400"
+                        : "bg-purple-700 border-purple-400 hover:bg-purple-600"
+                  }
+                  ${isAnimating ? "pointer-events-none" : ""}
+                `}
               >
-                <div
-                  onClick={() => handleChoose(choice.id)}
-                  role="button"
-                  tabIndex={0}
-                  className="w-full h-full rounded-lg cursor-pointer select-none flex items-center justify-center bg-linear-to-b from-[#7a4a26] to-[#5a3319] text-white font-semibold shadow-xl border-2 border-[#3f2a16]"
-                  style={{
-                    transformOrigin: origin,
-                    transition: isAnimating
-                      ? "transform 420ms cubic-bezier(.22,.9,.35,1)"
-                      : "transform 180ms ease",
-                    transform: `rotateY(${rotateY}deg)`,
-                    boxShadow: isSelected
-                      ? "0 18px 35px rgba(255,105,180,0.12)"
-                      : undefined,
-                  }}
-                >
-                  <div
-                    className={`px-2 text-center ${
-                      isShaking ? "animate-shake" : ""
-                    }`}
-                    style={{ textShadow: "0 2px 10px rgba(0,0,0,0.6)" }}
-                  >
-                    {choice.text}
-                  </div>
-                </div>
-
-                <div
-                  className="absolute"
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 999,
-                    background: "#c9a66b",
-                    right: i % 2 === 0 ? undefined : 14,
-                    left: i % 2 === 0 ? 14 : undefined,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)",
-                  }}
-                />
-              </div>
+                <div className="px-3 text-center">{choice.text}</div>
+              </button>
             );
           })}
         </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-gray-400">Pick a door — choose wisely.</p>
+        <div className="mt-6 sm:mt-8 text-center">
+          <p className="text-purple-400 pixel-font text-[9px] sm:text-[10px]">
+            TAP TO CHOOSE
+          </p>
         </div>
       </div>
-
-      <style>{`
-        @keyframes shake {
-          0% { transform: translateX(0); }
-          20% { transform: translateX(-6px); }
-          40% { transform: translateX(6px); }
-          60% { transform: translateX(-4px); }
-          80% { transform: translateX(4px); }
-          100% { transform: translateX(0); }
-        }
-        .animate-shake {
-          animation: shake 450ms ease;
-        }
-      `}</style>
     </div>
   );
 }

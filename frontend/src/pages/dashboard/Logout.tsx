@@ -5,11 +5,8 @@ function Logout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    sessionStorage.clear();
-
     const t = setTimeout(() => {
+      alert("✓ LOGGED OUT SUCCESSFULLY");
       navigate("/login", { replace: true });
     }, 800);
 
@@ -18,34 +15,28 @@ function Logout() {
 
   return (
     <div
-      className="
-        min-h-screen flex flex-col items-center justify-center
-        bg-black text-white px-4
-      "
+      className="min-h-screen flex flex-col items-center justify-center bg-black text-white px-4"
       style={{
         background: "linear-gradient(to bottom, #3a2d71 0%, #243b55 100%)",
       }}
     >
-      <div
-        className="
-          w-full
-          max-w-xs sm:max-w-sm md:max-w-md   /* card narrower on phone */
-          bg-black/80 border-2 border-[#c776d6]
-          rounded-xl px-4 py-5 sm:px-6 sm:py-7
-          shadow-[0_0_20px_#c776d6] text-center
-        "
-      >
-        <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-[#c776d6] drop-shadow-[0_0_10px_#e0c3fc] mb-2 sm:mb-3">
-          Logging out
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        .pixel-font { font-family: 'Press Start 2P', cursive; }
+        .pixel-box { border-radius: 0; }
+        .pixel-shadow { box-shadow: 8px 8px 0 rgba(139, 92, 246, 0.6), 12px 12px 0 rgba(88, 28, 135, 0.4); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+      `}</style>
+
+      <div className="pixel-box pixel-shadow bg-purple-950/90 border-4 border-purple-500 px-8 py-10 text-center flex flex-col items-center gap-4">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 border-4 border-purple-400 border-t-transparent pixel-box spin" />
+        <h1 className="pixel-font text-purple-300 text-xs sm:text-sm">
+          LOGGING OUT...
         </h1>
-        <p className="text-[#e0c3fc] text-xs sm:text-sm md:text-base mb-3 sm:mb-4">
-          Your session is being cleared. You will be redirected to the login
-          page.
+        <p className="pixel-font text-[8px] sm:text-[9px] text-purple-200">
+          PLEASE WAIT WHILE WE REDIRECT YOU
         </p>
-        <div className="flex justify-center mt-1 sm:mt-2">
-          {/* smaller spinner on phone, larger on bigger screens */}
-          <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 border-2 sm:border-2 md:border-4 border-[#e0c3fc] border-t-transparent rounded-full animate-spin" />
-        </div>
       </div>
     </div>
   );

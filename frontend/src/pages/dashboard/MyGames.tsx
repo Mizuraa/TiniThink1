@@ -28,7 +28,8 @@ export default function MyGames() {
       .then(setGames)
       .catch((e) => {
         alert(
-          "Error loading games: " + (e instanceof Error ? e.message : String(e))
+          "Error loading games: " +
+            (e instanceof Error ? e.message : String(e)),
         );
       });
   }, []);
@@ -60,16 +61,47 @@ export default function MyGames() {
   };
 
   return (
-    <div className="w-full flex items-start justify-center">
+    <div className="w-full flex items-start justify-center pixel-art">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        .pixel-art {
+          font-family: 'Press Start 2P', monospace;
+          image-rendering: pixelated;
+          image-rendering: crisp-edges;
+        }
+        
+        .pixel-art * {
+          image-rendering: pixelated;
+          image-rendering: crisp-edges;
+        }
+        
+        .pixel-border {
+          box-shadow: 
+            0 0 0 2px #000,
+            0 0 0 4px currentColor,
+            4px 4px 0 4px #000;
+        }
+        
+        .pixel-glow {
+          filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 4px currentColor);
+        }
+      `}</style>
+
       <div className="w-full max-w-xl lg:max-w-3xl">
-        <h2 className="text-2xl font-bold text-[#00ffff] mb-4 drop-shadow-[0_0_12px_#00ffff]">
-          My Games
+        <h2
+          className="text-xl md:text-2xl font-bold text-purple-300 mb-6 pixel-glow"
+          style={{ lineHeight: "1.8" }}
+        >
+          MY GAMES
         </h2>
+
         <button
           onClick={() => setShowCreate(true)}
-          className="mb-6 px-4 py-2 rounded bg-[#ff69b4] text-white font-bold shadow-[0_0_14px_#ff69b4] hover:bg-[#ea53a6] transition"
+          className="mb-6 px-6 py-3 bg-purple-600 text-white font-bold pixel-border border-purple-500 hover:bg-purple-700 transition-colors text-sm"
+          style={{ imageRendering: "pixelated" }}
         >
-          Create Game
+          CREATE GAME
         </button>
 
         {showCreate && (
@@ -77,7 +109,7 @@ export default function MyGames() {
             onCreated={() => {
               setShowCreate(false);
               fetch(
-                `http://localhost:8080/game/my-games?creatorId=${creatorId}`
+                `http://localhost:8080/game/my-games?creatorId=${creatorId}`,
               )
                 .then((res) => res.json())
                 .then(setGames);
@@ -85,47 +117,56 @@ export default function MyGames() {
           />
         )}
 
-        <div className="mt-4 space-y-4">
+        <div className="mt-6 space-y-4">
           {games.length === 0 && (
-            <div className="text-[#00ffff] bg-black/60 rounded p-4 shadow-[0_0_10px_#00ffff2a]">
-              No games yet.
+            <div
+              className="text-purple-300 bg-black p-6 pixel-border border-purple-500 text-xs"
+              style={{ lineHeight: "2" }}
+            >
+              NO GAMES YET.
             </div>
           )}
           {games.map((game) => (
             <div
               key={game.id}
-              className="p-3 bg-black border-2 border-[#00ffff] rounded-xl flex justify-between items-center shadow-[0_0_18px_#00ffff4a]"
+              className="p-4 bg-black pixel-border border-purple-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
             >
-              <div>
-                <div className="font-bold text-[#00ffff] drop-shadow-[0_0_8px_#00ffff]">
-                  {game.title}
+              <div className="flex-1">
+                <div
+                  className="font-bold text-purple-300 pixel-glow mb-2 text-sm"
+                  style={{ lineHeight: "1.8" }}
+                >
+                  {game.title.toUpperCase()}
                 </div>
-                <div className="text-gray-300 text-sm">
-                  Questions: {game.questions.length}
+                <div
+                  className="text-gray-300 text-xs"
+                  style={{ lineHeight: "1.8" }}
+                >
+                  QUESTIONS: {game.questions.length}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3 flex-wrap">
                 <button
-                  className="px-3 py-1 rounded bg-[#00ffff]/20 text-[#00ffff] font-semibold shadow-[0_0_8px_#00ffff] hover:bg-[#00ffff]/40 transition"
+                  className="px-4 py-2 bg-purple-600 text-white font-bold pixel-border border-purple-500 hover:bg-purple-700 transition-colors text-xs"
                   onClick={() => setPlayOptionsGame(game)}
                   title="Play quiz"
                 >
-                  Play
+                  PLAY
                 </button>
                 <button
-                  className="px-3 py-1 rounded bg-[#ff69b4]/20 text-[#ff69b4] font-semibold shadow-[0_0_8px_#ff69b4] hover:bg-[#ff69b4]/40 transition"
+                  className="px-4 py-2 bg-purple-700 text-white font-bold pixel-border border-purple-600 hover:bg-purple-800 transition-colors text-xs"
                   onClick={() => setEditingGame(game)}
                   title="Edit quiz"
                 >
-                  Edit
+                  EDIT
                 </button>
                 <button
-                  className="px-3 py-1 rounded bg-[#ff1744]/20 text-[#ff1744] font-semibold shadow-[0_0_8px_#ff1744] hover:bg-[#ff1744]/40 transition"
+                  className="px-4 py-2 bg-red-900 text-white font-bold pixel-border border-red-700 hover:bg-red-950 transition-colors text-xs"
                   onClick={() => handleDelete(game.id)}
                   disabled={loadingId === game.id}
                   title="Delete quiz"
                 >
-                  {loadingId === game.id ? "Deleting..." : "Delete"}
+                  {loadingId === game.id ? "DEL..." : "DELETE"}
                 </button>
               </div>
             </div>

@@ -32,7 +32,7 @@ function getHighestPoints(username: string, groups: GroupType[]): number {
 
 function getGroupRankings(
   username: string,
-  groups: GroupType[]
+  groups: GroupType[],
 ): { group: string; rank: number }[] {
   return groups
     .map((group) => {
@@ -51,7 +51,7 @@ const Profile: React.FC<ProfileProps> = ({ user, setUser, groups }) => {
   const groupRankings = getGroupRankings(user.username, groups);
 
   const addFriend = () => {
-    const name = prompt("Friend name?");
+    const name = prompt("ENTER FRIEND NAME:");
     if (name && name.trim())
       setUser((prev) => ({
         ...prev,
@@ -74,29 +74,36 @@ const Profile: React.FC<ProfileProps> = ({ user, setUser, groups }) => {
     groupRankings.length > 0
       ? groupRankings.reduce(
           (minGroup, r) => (r.rank < minGroup.rank ? r : minGroup),
-          groupRankings[0]
+          groupRankings[0],
         ).group
       : "";
 
   return (
     <div className="w-full flex items-start justify-center">
-      <div className="max-w-sm sm:max-w-md w-full mx-auto mt-10 mb-10 px-6 py-8 bg-[#171825] border border-[#23263a] rounded-2xl shadow-[0_2px_34px_rgba(30,32,70,0.18),0_2px_10px_rgba(0,0,0,0.12)] text-[#f1f1fa]">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        .pixel-font { font-family: 'Press Start 2P', cursive; }
+        .pixel-box { border-radius: 0; }
+        .pixel-shadow { box-shadow: 6px 6px 0 rgba(139, 92, 246, 0.5), 8px 8px 0 rgba(88, 28, 135, 0.3); }
+      `}</style>
+
+      <div className="max-w-sm sm:max-w-md w-full mx-auto mt-4 sm:mt-10 mb-6 sm:mb-10 px-4 sm:px-6 py-6 sm:py-8 bg-purple-950/90 border-4 sm:border-8 border-purple-500 pixel-box pixel-shadow text-purple-200">
         {/* Header */}
-        <div className="flex items-center gap-6 mb-9">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6 sm:mb-9">
           <img
             src={user.avatar}
-            alt="User avatar"
-            className="w-[74px] h-[74px] rounded-full border-[2.5px] border-[#28294c] bg-[#191a28] object-cover shadow-[0_2px_12px_#131326] mb-1"
+            alt="Avatar"
+            className="w-16 h-16 sm:w-18.5 sm:h-18.5 pixel-box border-4 border-purple-400 bg-purple-900 object-cover pixel-shadow"
           />
-          <div className="flex-1">
-            <div className="text-white font-semibold text-[23px]">
+          <div className="flex-1 text-center sm:text-left">
+            <div className="text-white pixel-font text-base sm:text-lg mb-2">
               {user.username}
             </div>
             <span
-              className={`mt-2 inline-block rounded px-4 py-[5px] text-[13.5px] font-semibold tracking-[0.08em] ${
+              className={`inline-block pixel-box px-3 py-1 text-[9px] sm:text-[10px] pixel-font border-2 ${
                 user.status === "online"
-                  ? "bg-[#425dff] text-white"
-                  : "bg-[#9496b8] text-white"
+                  ? "bg-green-600 border-green-400 text-white"
+                  : "bg-gray-600 border-gray-400 text-white"
               }`}
             >
               {user.status.toUpperCase()}
@@ -104,41 +111,37 @@ const Profile: React.FC<ProfileProps> = ({ user, setUser, groups }) => {
           </div>
         </div>
 
-        {/* Basic info */}
-        <div className="mb-3 space-y-2">
-          <div>
-            <span className="font-medium text-[#8a8aab]">Email: </span>
-            <span className="font-semibold text-white">{user.email}</span>
+        {/* Basic Info */}
+        <div className="mb-4 space-y-2 sm:space-y-3 text-[10px] sm:text-xs pixel-font">
+          <div className="bg-purple-900/50 pixel-box border-2 border-purple-600 p-2 sm:p-3">
+            <span className="text-purple-400">EMAIL:</span>{" "}
+            <span className="text-white">{user.email}</span>
           </div>
-          <div>
-            <span className="font-medium text-[#8a8aab]">Age: </span>
-            <span className="font-semibold text-white">{user.age}</span>
+          <div className="bg-purple-900/50 pixel-box border-2 border-purple-600 p-2 sm:p-3">
+            <span className="text-purple-400">AGE:</span>{" "}
+            <span className="text-white">{user.age}</span>
           </div>
-          <div>
-            <span className="font-medium text-[#8a8aab]">School: </span>
-            <span className="font-semibold text-white">{user.school}</span>
+          <div className="bg-purple-900/50 pixel-box border-2 border-purple-600 p-2 sm:p-3">
+            <span className="text-purple-400">SCHOOL:</span>{" "}
+            <span className="text-white wrap-break-word">{user.school}</span>
           </div>
         </div>
 
-        {/* Highest points */}
-        <div className="my-4">
-          <span className="font-medium text-[#8a8aab]">
-            Highest Points (from groups):{" "}
-          </span>
-          <span className="font-semibold text-[#00ffff]">{highestPoints}</span>
+        {/* Highest Points */}
+        <div className="my-4 bg-purple-900/50 pixel-box border-2 border-purple-600 p-2 sm:p-3 text-[10px] sm:text-xs pixel-font">
+          <span className="text-purple-400">HIGHEST POINTS:</span>{" "}
+          <span className="text-cyan-400 font-bold">{highestPoints}</span>
         </div>
 
         {/* Rankings */}
-        <div className="my-4">
-          <span className="font-medium text-[#8a8aab]">Ranking: </span>
+        <div className="my-4 bg-purple-900/50 pixel-box border-2 border-purple-600 p-2 sm:p-3 text-[10px] sm:text-xs pixel-font">
+          <span className="text-purple-400">RANKING:</span>{" "}
           {groupRankings.length === 0 ? (
-            <span className="font-semibold text-[#e55353]">
-              No group ranking
-            </span>
+            <span className="text-red-400">NO RANKING</span>
           ) : (
-            <span className="font-semibold text-[#ffd700]">
+            <span className="text-yellow-400">
               {groupRankings.map((r) => (
-                <span key={r.group} className="mr-2">
+                <span key={r.group} className="block sm:inline sm:mr-2">
                   {r.group}: #{r.rank}
                 </span>
               ))}
@@ -148,29 +151,31 @@ const Profile: React.FC<ProfileProps> = ({ user, setUser, groups }) => {
 
         {/* Friends */}
         <div className="my-4">
-          <span className="font-medium text-[#8a8aab]">Friends: </span>
-          <span className="font-semibold text-[#00ffff]">
-            {user.friends.length}
-          </span>
-          <button
-            onClick={addFriend}
-            className="ml-3 inline-flex items-center rounded-lg border border-[#35366a] bg-[#23263a] px-3.5 py-1.5 text-xs font-semibold text-[#d1d5de] hover:bg-[#2b3050] transition"
-          >
-            Add Friend
-          </button>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
+            <span className="pixel-font text-[10px] sm:text-xs text-purple-400">
+              FRIENDS:{" "}
+              <span className="text-cyan-400">{user.friends.length}</span>
+            </span>
+            <button
+              onClick={addFriend}
+              className="w-full sm:w-auto px-3 py-2 pixel-box border-2 border-purple-400 bg-purple-700 active:bg-purple-600 text-purple-200 pixel-font text-[9px] sm:text-[10px] min-h-11 sm:min-h-8"
+            >
+              + ADD FRIEND
+            </button>
+          </div>
 
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {user.friends.map((friend, idx) => (
               <span
                 key={`${friend}-${idx}`}
-                className="inline-flex items-center rounded-full bg-[#23263a] px-3 py-1 text-xs text-[#e5e7f3]"
+                className="inline-flex items-center bg-purple-900/50 pixel-box border-2 border-purple-600 px-2 py-1 text-[9px] sm:text-[10px] text-purple-200 pixel-font"
               >
                 {friend}
                 <button
                   onClick={() => removeFriend(idx)}
-                  className="ml-1 rounded bg-[#31141a] px-1.5 text-[10px] font-semibold text-[#f68989] border border-[#522837] hover:bg-[#4b1d29]"
+                  className="ml-2 px-1 text-[9px] text-red-400 border border-red-600 pixel-box bg-red-900/50 hover:bg-red-800 min-w-6 min-h-6"
                 >
-                  Remove
+                  ×
                 </button>
               </span>
             ))}
@@ -178,48 +183,52 @@ const Profile: React.FC<ProfileProps> = ({ user, setUser, groups }) => {
         </div>
 
         {/* Groups */}
-        <div className="my-4">
-          <span className="font-medium text-[#8a8aab]">Groups: </span>
+        <div className="my-4 bg-purple-900/50 pixel-box border-2 border-purple-600 p-2 sm:p-3 text-[10px] sm:text-xs pixel-font">
+          <span className="text-purple-400">GROUPS:</span>{" "}
           {groups.length === 0 ? (
-            <span className="font-semibold text-[#e55353]">No groups yet</span>
+            <span className="text-red-400">NO GROUPS</span>
           ) : (
-            <span className="font-semibold text-[#00ffff]">
+            <span className="text-cyan-400 wrap-break-word">
               {groups.map((g) => g.name).join(", ")}
             </span>
           )}
         </div>
 
-        {/* Stats bar */}
-        <div className="mt-4 mb-7 flex justify-center gap-10 border-y border-[#23263a] py-4">
-          <div>
-            <div className="mb-1 text-[13px] font-medium text-[#76789b]">
-              Highest Points
+        {/* Stats Bar */}
+        <div className="mt-6 mb-4 sm:mb-7 grid grid-cols-3 gap-2 sm:gap-4 border-t-4 border-b-4 border-purple-600 py-4">
+          <div className="text-center">
+            <div className="mb-1 text-[9px] sm:text-[10px] pixel-font text-purple-400">
+              POINTS
             </div>
-            <div className="text-[22px] font-semibold">{highestPoints}</div>
+            <div className="text-base sm:text-xl pixel-font text-white">
+              {highestPoints}
+            </div>
           </div>
-          <div>
-            <div className="mb-1 text-[13px] font-medium text-[#76789b]">
-              Friends
+          <div className="text-center">
+            <div className="mb-1 text-[9px] sm:text-[10px] pixel-font text-purple-400">
+              FRIENDS
             </div>
-            <div className="text-[22px] font-semibold">
+            <div className="text-base sm:text-xl pixel-font text-white">
               {user.friends.length}
             </div>
           </div>
-          <div>
-            <div className="mb-1 text-[13px] font-medium text-[#76789b]">
-              Top Ranking
+          <div className="text-center">
+            <div className="mb-1 text-[9px] sm:text-[10px] pixel-font text-purple-400">
+              RANK
             </div>
             {topRank !== null ? (
               <>
-                <div className="text-[22px] font-semibold">
-                  #{topRank} <span className="text-[16px]">★</span>
+                <div className="text-base sm:text-xl pixel-font text-white">
+                  #{topRank}
                 </div>
-                <div className="text-[13px] font-semibold text-[#aeb2cf]">
+                <div className="text-[8px] sm:text-[9px] pixel-font text-purple-300 wrap-break-word">
                   {topRankGroup}
                 </div>
               </>
             ) : (
-              <div className="text-[22px] font-semibold">—</div>
+              <div className="text-base sm:text-xl pixel-font text-white">
+                —
+              </div>
             )}
           </div>
         </div>

@@ -174,10 +174,49 @@ function TermsModal({ isOpen, onClose, onAccept }: TermsModalProps) {
           </p>
         </div>
         <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm text-purple-200 leading-relaxed pixel-font">
-          {/* Put your terms text here */}
           <p>
-            Example terms: By using TINITHINK you agree to the processing of
-            your data for educational and personalization purposes.
+            1. Acceptance of Terms – By accessing and using this website, you
+            agree to comply with and be bound by these Terms and Conditions. If
+            you do not agree, please discontinue use immediately.
+            <br />
+            <br />
+            2. Use of the Website – You agree to use this site only for lawful
+            purposes and in a way that does not infringe the rights of,
+            restrict, or inhibit anyone else’s use and enjoyment of the site.
+            <br />
+            <br />
+            3. Intellectual Property – All content, trademarks, and materials on
+            this site are owned by or licensed to TiniThink. You may not
+            reproduce, distribute, or create derivative works without prior
+            written consent.
+            <br />
+            <br />
+            4. User Accounts – If you create an account, you are responsible for
+            maintaining the confidentiality of your login details and for all
+            activities under your account.
+            <br />
+            <br />
+            5. Limitation of Liability – We are not liable for any direct,
+            indirect, incidental, or consequential damages arising from your use
+            of this website.
+            <br />
+            <br />
+            6. Third-Party Links – This site may contain links to third-party
+            websites. We are not responsible for the content or practices of
+            these external sites.
+            <br />
+            <br />
+            7. Changes to Terms – We reserve the right to update or modify these
+            Terms at any time without prior notice. Continued use of the site
+            after changes means you accept the updated Terms.
+            <br />
+            <br />
+            8. Governing Law – These Terms are governed by and construed in
+            accordance with the laws of the Philippines.
+            <br />
+            <br />
+            9. Contact Us – If you have any questions about these Terms, please
+            contact us.
           </p>
         </div>
         <div className="p-6 border-t-8 border-purple-500 flex gap-4">

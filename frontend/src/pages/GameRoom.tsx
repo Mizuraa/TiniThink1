@@ -9,7 +9,7 @@ type Question = { id: number; text: string; ordering?: number };
 export default function GameRoom() {
   const { quizId } = useParams<{ quizId: string }>();
   const [session, setSession] = useState<{ id: number; lives: number } | null>(
-    null
+    null,
   );
   const [question, setQuestion] = useState<Question | null>(null);
   const [choices, setChoices] = useState<Choice[]>([]);
@@ -91,7 +91,7 @@ export default function GameRoom() {
             Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
           },
           body: JSON.stringify({ questionId: question.id, choiceId }),
-        }
+        },
       );
 
       if (!res.ok) {
@@ -141,11 +141,50 @@ export default function GameRoom() {
 
   if (!question) {
     return (
-      <div className="h-screen flex items-center justify-center bg-linear-to-b from-black to-gray-900 text-white">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold">Game Over / Finished</h2>
-          <p className="mt-2 text-gray-300">
-            Thanks for playing — replay from the menu.
+      <div className="h-screen flex items-center justify-center bg-black text-white pixel-art">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+          
+          .pixel-art {
+            font-family: 'Press Start 2P', monospace;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+          }
+          
+          .pixel-art * {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+          }
+          
+          .pixel-border {
+            box-shadow: 
+              0 0 0 2px #000,
+              0 0 0 4px currentColor,
+              4px 4px 0 4px #000;
+          }
+          
+          .pixel-glow {
+            filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 4px currentColor);
+          }
+          
+          .pixel-bg {
+            background-image: 
+              repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 2px, rgba(255,255,255,0.03) 3px),
+              repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 2px, rgba(255,255,255,0.03) 3px);
+          }
+        `}</style>
+        <div className="text-center p-8 bg-neutral-900 pixel-border border-purple-500">
+          <h2
+            className="text-2xl font-bold mb-4 pixel-glow text-purple-400"
+            style={{ lineHeight: "1.8" }}
+          >
+            GAME OVER
+          </h2>
+          <p className="mt-4 text-gray-300 text-xs" style={{ lineHeight: "2" }}>
+            THANKS FOR PLAYING
+          </p>
+          <p className="text-gray-400 text-xs mt-2" style={{ lineHeight: "2" }}>
+            REPLAY FROM MENU
           </p>
         </div>
       </div>
@@ -153,26 +192,91 @@ export default function GameRoom() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-black to-gray-900 text-white">
+    <div className="min-h-screen flex items-center justify-center bg-black text-white pixel-art pixel-bg">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        .pixel-art {
+          font-family: 'Press Start 2P', monospace;
+          image-rendering: pixelated;
+          image-rendering: crisp-edges;
+        }
+        
+        .pixel-art * {
+          image-rendering: pixelated;
+          image-rendering: crisp-edges;
+        }
+        
+        .pixel-border {
+          box-shadow: 
+            0 0 0 2px #000,
+            0 0 0 4px currentColor,
+            4px 4px 0 4px #000;
+        }
+        
+        .pixel-glow {
+          filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 4px currentColor);
+        }
+        
+        .pixel-bg {
+          background-image: 
+            repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 2px, rgba(255,255,255,0.03) 3px),
+            repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 2px, rgba(255,255,255,0.03) 3px);
+        }
+        
+        .pixel-bounce:hover {
+          animation: bounce 0.3s ease-in-out;
+        }
+        
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        
+        .pixel-pulse {
+          animation: pulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+      `}</style>
+
       <div className="w-full max-w-3xl lg:max-w-5xl px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <div className="text-lg">
-            Lives: <span className="font-mono">{"❤️".repeat(lives)}</span>
+        <div className="flex justify-between items-center mb-8">
+          <div
+            className="text-sm bg-neutral-900 px-4 py-2 pixel-border border-purple-500"
+            style={{ lineHeight: "1.8" }}
+          >
+            LIVES: <span className="text-purple-400">{"♥".repeat(lives)}</span>
           </div>
-          <div className="text-sm text-gray-400">Quiz: {quizId}</div>
+          <div
+            className="text-xs text-gray-400 bg-neutral-900 px-4 py-2 pixel-border border-gray-600"
+            style={{ lineHeight: "1.8" }}
+          >
+            QUIZ: {quizId}
+          </div>
         </div>
 
-        <div className="flex justify-center mb-8">
-          <img
-            src={character}
-            alt="Character"
-            className="w-32 h-32 sm:w-40 sm:h-40 object-contain drop-shadow-2xl"
-          />
+        <div className="flex justify-center mb-10">
+          <div className="relative">
+            <img
+              src={character}
+              alt="Character"
+              className="w-32 h-32 sm:w-48 sm:h-48 object-contain pixel-glow"
+              style={{ imageRendering: "pixelated" }}
+            />
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-black/50 rounded-full blur-sm"></div>
+          </div>
         </div>
 
-        <div className="bg-neutral-800 p-4 sm:p-6 rounded-xl mb-8">
-          <h1 className="text-xl sm:text-2xl font-bold text-center">
-            {question.text}
+        <div className="bg-neutral-900 p-6 sm:p-8 mb-10 pixel-border border-purple-500">
+          <h1
+            className="text-base sm:text-lg font-bold text-center text-purple-300 pixel-glow"
+            style={{ lineHeight: "2" }}
+          >
+            {question.text.toUpperCase()}
           </h1>
         </div>
 
@@ -185,18 +289,22 @@ export default function GameRoom() {
             <div
               key={c.id}
               onClick={() => handleChoice(c.id)}
-              className={`bg-linear-to-br from-red-700 to-red-900 rounded-xl p-4 sm:p-6 cursor-pointer hover:scale-105 transform transition ${
+              className={`bg-purple-900 pixel-border border-purple-600 p-4 sm:p-6 cursor-pointer pixel-bounce transition-transform ${
                 isAnswering ? "opacity-50 pointer-events-none" : ""
               }`}
             >
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-4">
                 <img
                   src={door}
                   alt="Door"
-                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
+                  className="w-16 h-16 sm:w-24 sm:h-24 object-contain"
+                  style={{ imageRendering: "pixelated" }}
                 />
-                <div className="text-white font-bold text-center text-sm sm:text-base">
-                  {c.text}
+                <div
+                  className="text-white font-bold text-center text-xs sm:text-sm"
+                  style={{ lineHeight: "1.8" }}
+                >
+                  {c.text.toUpperCase()}
                 </div>
               </div>
             </div>
@@ -204,8 +312,15 @@ export default function GameRoom() {
         </div>
 
         {resultMsg && (
-          <div className="mt-6 text-center text-2xl font-bold animate-pulse">
-            {resultMsg}
+          <div className="mt-8 text-center">
+            <div className="inline-block bg-neutral-900 px-8 py-4 pixel-border border-purple-400">
+              <span
+                className="text-xl sm:text-2xl font-bold text-purple-300 pixel-pulse pixel-glow"
+                style={{ lineHeight: "1.8" }}
+              >
+                {resultMsg.toUpperCase()}
+              </span>
+            </div>
           </div>
         )}
       </div>
