@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 
 type ReviewItem = {
+  id?: string;
   term: string;
   definition: string;
   highlightColor?: string;
@@ -24,26 +26,116 @@ export function Reviewer() {
     string | undefined
   >(undefined);
   const [nextUnderline, setNextUnderline] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function addItem() {
-    if (!term.trim() || !definition.trim()) return;
-    setReviewList((prev) => [
-      ...prev,
-      {
-        term: term.trim(),
-        definition: definition.trim(),
-        highlightColor: nextHighlightColor,
-        underline: nextUnderline,
-      },
-    ]);
-    setTerm("");
-    setDefinition("");
-    setNextHighlightColor(undefined);
-    setNextUnderline(false);
+  useEffect(() => {
+    loadTerms();
+  }, []);
+
+  async function loadTerms() {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("reviewer_terms")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        setReviewList(
+          data.map((term) => ({
+            id: term.id,
+            term: term.term,
+            definition: term.definition,
+            highlightColor: term.highlight_color,
+            underline: term.underline,
+          })),
+        );
+      }
+    } catch (error) {
+      console.error("Error loading terms:", error);
+    }
   }
 
-  function removeItem(idx: number) {
-    setReviewList((prev) => prev.filter((_, i) => i !== idx));
+  async function addItem() {
+    if (!term.trim() || !definition.trim()) {
+      alert("⚠️ FILL BOTH FIELDS");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        alert("⚠️ LOGIN REQUIRED");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("reviewer_terms")
+        .insert({
+          user_id: user.id,
+          term: term.trim(),
+          definition: definition.trim(),
+          highlight_color: nextHighlightColor || null,
+          underline: nextUnderline,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setReviewList([
+          {
+            id: data.id,
+            term: data.term,
+            definition: data.definition,
+            highlightColor: data.highlight_color,
+            underline: data.underline,
+          },
+          ...reviewList,
+        ]);
+
+        setTerm("");
+        setDefinition("");
+        setNextHighlightColor(undefined);
+        setNextUnderline(false);
+      }
+    } catch (error: any) {
+      console.error("Add term error:", error);
+      alert("⚠️ SAVE FAILED: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function removeItem(idx: number) {
+    const item = reviewList[idx];
+    if (!item.id) return;
+
+    try {
+      const { error } = await supabase
+        .from("reviewer_terms")
+        .delete()
+        .eq("id", item.id);
+
+      if (error) throw error;
+
+      setReviewList(reviewList.filter((_, i) => i !== idx));
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("⚠️ DELETE FAILED");
+    }
   }
 
   return (
@@ -80,9 +172,10 @@ export function Reviewer() {
           />
           <button
             onClick={addItem}
-            className="w-full px-4 py-3 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-400 text-white pixel-box pixel-font text-[10px] sm:text-xs min-h-[44px]"
+            disabled={loading}
+            className="w-full px-4 py-3 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-400 text-white pixel-box pixel-font text-[10px] sm:text-xs min-h-11 disabled:opacity-50"
           >
-            ► ADD TERM
+            {loading ? "SAVING..." : "► ADD TERM"}
           </button>
         </div>
 
@@ -109,7 +202,7 @@ export function Reviewer() {
               ))}
               {nextHighlightColor && (
                 <button
-                  className="px-2 py-1 text-[9px] bg-white text-black pixel-box border-2 border-gray-400 pixel-font min-w-[32px] min-h-[32px]"
+                  className="px-2 py-1 text-[9px] bg-white text-black pixel-box border-2 border-gray-400 pixel-font min-w-8 min-h-8"
                   onClick={() => setNextHighlightColor(undefined)}
                   title="Remove highlight"
                 >
@@ -120,7 +213,7 @@ export function Reviewer() {
           </div>
 
           <button
-            className="px-4 py-3 pixel-box border-2 border-purple-500 bg-purple-900/50 pixel-font text-[10px] sm:text-xs text-purple-300 min-h-[44px]"
+            className="px-4 py-3 pixel-box border-2 border-purple-500 bg-purple-900/50 pixel-font text-[10px] sm:text-xs text-purple-300 min-h-11"
             style={{
               textDecoration: nextUnderline ? "underline" : "none",
             }}
@@ -150,7 +243,7 @@ export function Reviewer() {
             >
               <button
                 title="Remove"
-                className="absolute right-2 top-2 text-red-400 px-2 py-1 text-sm pixel-font min-w-[32px] min-h-[32px] bg-red-900/50 pixel-box border-2 border-red-600"
+                className="absolute right-2 top-2 text-red-400 px-2 py-1 text-sm pixel-font min-w-8 min-h-8 bg-red-900/50 pixel-box border-2 border-red-600"
                 onClick={() => removeItem(idx)}
               >
                 ×
@@ -186,4 +279,5 @@ export function Reviewer() {
     </div>
   );
 }
+
 export default Reviewer;

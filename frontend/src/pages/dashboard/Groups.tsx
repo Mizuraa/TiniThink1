@@ -1,52 +1,165 @@
-import React, { useState } from "react";
-import type { UserType } from "./Profile";
+import React, { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 
 export type GroupType = {
   id: string;
   name: string;
-  members: { name: string; points: number }[];
+  members: { name: string; points: number; user_id: string }[];
 };
 
-type GroupsProps = {
-  groups: GroupType[];
-  setGroups: React.Dispatch<React.SetStateAction<GroupType[]>>;
-  user: UserType;
-};
-
-const Groups: React.FC<GroupsProps> = ({ groups, setGroups, user }) => {
+const Groups: React.FC = () => {
+  const [groups, setGroups] = useState<GroupType[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
 
-  function handleCreateGroup() {
-    if (!groupName.trim()) return;
-    setGroups([
-      ...groups,
-      {
-        id: Date.now().toString(),
-        name: groupName.trim(),
-        members: [
-          { name: user.username, points: Math.floor(Math.random() * 1000) },
-        ],
-      },
-    ]);
-    setGroupName("");
-    setShowCreate(false);
+  useEffect(() => {
+    loadUserAndGroups();
+  }, []);
+
+  async function loadUserAndGroups() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+
+    if (profile) {
+      setUserId(user.id);
+      setUsername(profile.username);
+    }
+
+    loadGroups(user.id);
   }
 
-  function handleAddPoints(groupId: string) {
-    setGroups((prev) =>
-      prev.map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              members: group.members.map((m) =>
-                m.name === user.username ? { ...m, points: m.points + 100 } : m,
-              ),
-            }
-          : group,
-      ),
-    );
+  async function loadGroups(uid: string) {
+    try {
+      // Get groups user is a member of
+      const { data: groupMemberships } = await supabase
+        .from("group_members")
+        .select("group_id")
+        .eq("user_id", uid);
+
+      if (!groupMemberships || groupMemberships.length === 0) {
+        setGroups([]);
+        return;
+      }
+
+      const groupIds = groupMemberships.map((gm) => gm.group_id);
+
+      // Get group details
+      const { data: groupsData } = await supabase
+        .from("groups")
+        .select("id, name")
+        .in("id", groupIds);
+
+      // Get all members for these groups
+      const { data: membersData } = await supabase
+        .from("group_members")
+        .select(
+          `
+          group_id,
+          user_id,
+          points,
+          profiles (username)
+        `,
+        )
+        .in("group_id", groupIds);
+
+      // Organize into groups
+      const groupsMap = new Map<string, GroupType>();
+
+      groupsData?.forEach((group) => {
+        groupsMap.set(group.id, {
+          id: group.id,
+          name: group.name,
+          members: [],
+        });
+      });
+
+      membersData?.forEach((member) => {
+        const group = groupsMap.get(member.group_id);
+        if (group) {
+          group.members.push({
+            name: Array.isArray(member.profiles)
+              ? member.profiles[0].username
+              : (member.profiles as { username: string }).username,
+            points: member.points,
+            user_id: member.user_id,
+          });
+        }
+      });
+
+      setGroups(Array.from(groupsMap.values()));
+    } catch (error) {
+      console.error("Error loading groups:", error);
+    }
+  }
+
+  async function handleCreateGroup() {
+    if (!groupName.trim()) return;
+
+    try {
+      // Create group
+      const { data: group, error: groupError } = await supabase
+        .from("groups")
+        .insert({ name: groupName.trim(), created_by: userId })
+        .select()
+        .single();
+
+      if (groupError) throw groupError;
+
+      // Add creator as member
+      const { error: memberError } = await supabase
+        .from("group_members")
+        .insert({
+          group_id: group.id,
+          user_id: userId,
+          points: 0,
+        });
+
+      if (memberError) throw memberError;
+
+      loadGroups(userId);
+      setGroupName("");
+      setShowCreate(false);
+      alert("✓ GROUP CREATED");
+    } catch (error: any) {
+      console.error("Create group error:", error);
+      alert("⚠️ CREATE FAILED: " + error.message);
+    }
+  }
+
+  async function handleAddPoints(groupId: string) {
+    try {
+      const { data: currentMember } = await supabase
+        .from("group_members")
+        .select("points")
+        .eq("group_id", groupId)
+        .eq("user_id", userId)
+        .single();
+
+      if (!currentMember) return;
+
+      const { error } = await supabase
+        .from("group_members")
+        .update({ points: currentMember.points + 100 })
+        .eq("group_id", groupId)
+        .eq("user_id", userId);
+
+      if (!error) {
+        loadGroups(userId);
+      }
+    } catch (error) {
+      console.error("Add points error:", error);
+    }
   }
 
   const selectedGroup = groups.find((g) => g.id === selectedGroupId) || null;
@@ -69,7 +182,7 @@ const Groups: React.FC<GroupsProps> = ({ groups, setGroups, user }) => {
 
         <div className="mb-4 sm:mb-6">
           <button
-            className="w-full sm:w-auto px-4 py-3 bg-cyan-600 active:bg-cyan-500 text-white border-2 sm:border-4 border-cyan-400 pixel-box pixel-font text-[10px] sm:text-xs min-h-[44px]"
+            className="w-full sm:w-auto px-4 py-3 bg-cyan-600 active:bg-cyan-500 text-white border-2 sm:border-4 border-cyan-400 pixel-box pixel-font text-[10px] sm:text-xs min-h-11"
             onClick={() => setShowCreate(true)}
           >
             ► CREATE GROUP
@@ -86,13 +199,13 @@ const Groups: React.FC<GroupsProps> = ({ groups, setGroups, user }) => {
             />
             <div className="flex gap-2">
               <button
-                className="flex-1 px-3 py-3 bg-green-600 active:bg-green-500 border-2 border-green-400 text-white pixel-box pixel-font text-[10px] sm:text-xs min-h-[44px]"
+                className="flex-1 px-3 py-3 bg-green-600 active:bg-green-500 border-2 border-green-400 text-white pixel-box pixel-font text-[10px] sm:text-xs min-h-11"
                 onClick={handleCreateGroup}
               >
                 ► CREATE
               </button>
               <button
-                className="flex-1 px-3 py-3 bg-red-600 active:bg-red-500 border-2 border-red-400 text-white pixel-box pixel-font text-[10px] sm:text-xs min-h-[44px]"
+                className="flex-1 px-3 py-3 bg-red-600 active:bg-red-500 border-2 border-red-400 text-white pixel-box pixel-font text-[10px] sm:text-xs min-h-11"
                 onClick={() => setShowCreate(false)}
               >
                 CANCEL
@@ -115,7 +228,7 @@ const Groups: React.FC<GroupsProps> = ({ groups, setGroups, user }) => {
           {groups.map((g) => (
             <button
               key={g.id}
-              className={`block w-full px-4 py-3 pixel-box border-2 sm:border-4 bg-purple-950/80 text-left pixel-font text-[10px] sm:text-xs min-h-[44px] active:bg-purple-800 transition-colors ${
+              className={`block w-full px-4 py-3 pixel-box border-2 sm:border-4 bg-purple-950/80 text-left pixel-font text-[10px] sm:text-xs min-h-11 active:bg-purple-800 transition-colors ${
                 g.id === selectedGroupId
                   ? "border-cyan-400 pixel-shadow"
                   : "border-purple-600"
@@ -160,9 +273,9 @@ const Groups: React.FC<GroupsProps> = ({ groups, setGroups, user }) => {
                       <span className="pixel-font text-purple-300 text-[10px] sm:text-xs font-bold">
                         {member.points}
                       </span>
-                      {member.name === user.username && (
+                      {member.user_id === userId && (
                         <button
-                          className="px-2 py-1 sm:px-3 sm:py-2 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-400 text-white pixel-box pixel-font text-[9px] sm:text-[10px] min-w-[44px] min-h-[32px]"
+                          className="px-2 py-1 sm:px-3 sm:py-2 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-400 text-white pixel-box pixel-font text-[9px] sm:text-[10px] min-w-11 min-h-8"
                           onClick={() => handleAddPoints(selectedGroup.id)}
                         >
                           +100

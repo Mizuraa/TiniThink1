@@ -1,12 +1,87 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 
 const Settings: React.FC = () => {
-  const [username, setUsername] = useState<string>("PLAYER_1");
-  const [email, setEmail] = useState<string>("user@example.com");
+  const [username, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [age, setAge] = useState<string>("");
+  const [school, setSchool] = useState<string>("");
   const [notifications, setNotifications] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  function handleSave() {
-    alert("✓ SETTINGS SAVED!");
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  async function loadSettings() {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (profile) {
+        setUsername(profile.username || "");
+        setEmail(profile.email || "");
+        setAge(profile.age?.toString() || "");
+        setSchool(profile.school || "");
+      }
+    } catch (error) {
+      console.error("Error loading settings:", error);
+      alert("⚠️ ERROR LOADING SETTINGS");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        alert("⚠️ LOGIN REQUIRED");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          username: username.trim(),
+          email: email.trim(),
+          age: age ? parseInt(age) : null,
+          school: school.trim() || null,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      alert("✓ SETTINGS SAVED!");
+    } catch (error: any) {
+      console.error("Save settings error:", error);
+      alert("⚠️ SAVE FAILED: " + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full flex items-center justify-center p-8">
+        <div className="pixel-font text-purple-300 text-sm">LOADING...</div>
+      </div>
+    );
   }
 
   return (
@@ -59,6 +134,37 @@ const Settings: React.FC = () => {
             />
           </div>
 
+          <div>
+            <label
+              className="pixel-font text-[10px] sm:text-xs text-purple-300 block mb-2"
+              htmlFor="age"
+            >
+              AGE
+            </label>
+            <input
+              id="age"
+              type="number"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              className="w-full px-3 py-3 pixel-box bg-purple-950/50 border-2 border-purple-500 text-white pixel-font text-[10px] sm:text-xs focus:outline-none focus:border-purple-400"
+            />
+          </div>
+
+          <div>
+            <label
+              className="pixel-font text-[10px] sm:text-xs text-purple-300 block mb-2"
+              htmlFor="school"
+            >
+              SCHOOL
+            </label>
+            <input
+              id="school"
+              value={school}
+              onChange={(e) => setSchool(e.target.value)}
+              className="w-full px-3 py-3 pixel-box bg-purple-950/50 border-2 border-purple-500 text-white pixel-font text-[10px] sm:text-xs focus:outline-none focus:border-purple-400"
+            />
+          </div>
+
           <div className="flex items-center gap-3 p-4 bg-purple-900/50 pixel-box border-2 border-purple-600">
             <input
               type="checkbox"
@@ -77,9 +183,10 @@ const Settings: React.FC = () => {
 
           <button
             onClick={handleSave}
-            className="w-full px-4 py-4 bg-cyan-600 active:bg-cyan-500 border-2 sm:border-4 border-cyan-400 text-white pixel-box pixel-font text-[10px] sm:text-xs min-h-[44px]"
+            disabled={saving}
+            className="w-full px-4 py-4 bg-cyan-600 active:bg-cyan-500 border-2 sm:border-4 border-cyan-400 text-white pixel-box pixel-font text-[10px] sm:text-xs min-h-11 disabled:opacity-50"
           >
-            ► SAVE SETTINGS
+            {saving ? "SAVING..." : "► SAVE SETTINGS"}
           </button>
         </div>
       </div>

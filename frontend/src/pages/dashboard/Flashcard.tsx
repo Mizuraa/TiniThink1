@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { supabase } from "../../lib/supabase";
 
 type FolderLevel = "subject" | "grade" | "quarter";
 
@@ -15,11 +16,6 @@ type FlashcardData = {
   answer: string;
   path: HierarchyPath;
 };
-
-const MOCK_FOLDER_FILES = [
-  { id: "file1", name: "Biology_Lecture.pdf" },
-  { id: "file2", name: "HistoryNotes.pdf" },
-];
 
 const LEVEL_ORDER: FolderLevel[] = ["subject", "grade", "quarter"];
 
@@ -40,7 +36,6 @@ export default function Flashcard() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showAIDialog, setShowAIDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const existingCourses = Object.keys(pathsByCourse);
@@ -75,6 +70,59 @@ export default function Flashcard() {
       : "NONE";
   const atFinalLevel = currentLevel === null && !!activeCourse;
   const hasActivePath = activeCourse !== "" && currentPath.length >= 2;
+
+  useEffect(() => {
+    loadFlashcards();
+  }, []);
+
+  async function loadFlashcards() {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("flashcards")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const formatted = data.map((card) => ({
+          id: card.id,
+          question: card.question,
+          answer: card.answer,
+          path: [
+            { level: "course" as const, name: card.course },
+            ...(card.subject
+              ? [{ level: "subject" as const, name: card.subject }]
+              : []),
+            ...(card.grade_level
+              ? [{ level: "grade" as const, name: card.grade_level }]
+              : []),
+            ...(card.quarter
+              ? [{ level: "quarter" as const, name: card.quarter }]
+              : []),
+          ],
+        }));
+        setCards(formatted);
+
+        // Rebuild paths
+        const paths: Record<string, HierarchyPath> = {};
+        data.forEach((card) => {
+          if (!paths[card.course]) {
+            paths[card.course] = [{ level: "course", name: card.course }];
+          }
+        });
+        setPathsByCourse(paths);
+      }
+    } catch (error) {
+      console.error("Error loading flashcards:", error);
+    }
+  }
 
   function handleCreateOrUseCourse() {
     const trimmed = courseInput.trim();
@@ -157,7 +205,7 @@ export default function Flashcard() {
     setCurrentLevelValue("");
   }
 
-  function addCard() {
+  async function addCard() {
     if (!question.trim() || !answer.trim()) {
       alert("⚠️ FILL BOTH FIELDS");
       return;
@@ -166,27 +214,60 @@ export default function Flashcard() {
       alert("⚠️ SET COURSE AND SUBJECT FIRST");
       return;
     }
-    const newCard: FlashcardData = {
-      id: Date.now().toString(),
-      question: question.trim(),
-      answer: answer.trim(),
-      path: [...currentPath],
-    };
-    setCards((prev) => [...prev, newCard]);
-    setQuestion("");
-    setAnswer("");
-  }
 
-  function deleteCard(id: string) {
-    setCards((prev) => prev.filter((card) => card.id !== id));
-  }
-
-  function openAIDialog() {
-    if (!hasActivePath) {
-      alert("⚠️ SET PATH BEFORE AI GENERATION");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      alert("⚠️ LOGIN REQUIRED");
       return;
     }
-    setShowAIDialog(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("flashcards")
+        .insert({
+          user_id: user.id,
+          course: currentPath[0]?.name || "",
+          subject: currentPath[1]?.name || null,
+          grade_level: currentPath[2]?.name || null,
+          quarter: currentPath[3]?.name || null,
+          question: question.trim(),
+          answer: answer.trim(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const newCard: FlashcardData = {
+          id: data.id,
+          question: data.question,
+          answer: data.answer,
+          path: [...currentPath],
+        };
+        setCards([...cards, newCard]);
+        setQuestion("");
+        setAnswer("");
+        alert("✓ CARD ADDED");
+      }
+    } catch (error: any) {
+      console.error("Add card error:", error);
+      alert("⚠️ SAVE FAILED: " + error.message);
+    }
+  }
+
+  async function deleteCard(id: string) {
+    try {
+      const { error } = await supabase.from("flashcards").delete().eq("id", id);
+
+      if (error) throw error;
+
+      setCards(cards.filter((card) => card.id !== id));
+    } catch (error) {
+      alert("⚠️ DELETE FAILED");
+    }
   }
 
   return (
@@ -232,47 +313,39 @@ export default function Flashcard() {
             />
             <button
               onClick={handleCreateOrUseCourse}
-              className="px-3 py-2 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-400 pixel-box text-white pixel-font text-[10px] sm:text-xs whitespace-nowrap"
+              className="px-3 py-2 bg-green-600 active:bg-green-500 border-2 border-green-400 pixel-box text-white pixel-font text-[10px] sm:text-xs whitespace-nowrap"
             >
-              ► USE
+              ► ADD
             </button>
           </div>
 
-          <button
-            onClick={removeActiveCourse}
-            disabled={!activeCourse}
-            className="px-3 py-2 bg-red-600 active:bg-red-500 border-2 border-red-500 pixel-box text-white pixel-font text-[10px] sm:text-xs disabled:opacity-40"
-          >
-            REMOVE COURSE
-          </button>
+          {activeCourse && (
+            <button
+              onClick={removeActiveCourse}
+              className="text-[9px] sm:text-[10px] pixel-font text-red-400 hover:text-red-300 underline text-left"
+            >
+              REMOVE COURSE
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Path Organization */}
+      {/* Path Navigation */}
       <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-purple-950/80 pixel-box border-2 sm:border-4 border-purple-500 pixel-shadow">
         <h3 className="pixel-font mb-3 text-[10px] sm:text-xs text-purple-300">
-          PATH ORGANIZATION
+          PATH
         </h3>
 
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <span className="text-[10px] sm:text-xs pixel-font text-purple-400">
-            PATH:
-          </span>
-          {currentPath.length === 0 ? (
-            <span className="text-[9px] sm:text-[10px] pixel-font text-purple-500">
-              NO PATH SET
-            </span>
-          ) : (
-            currentPath.map((item, idx) => (
-              <button
-                key={`${item.level}-${idx}`}
-                onClick={() => resetToPathIndex(idx)}
-                className="px-2 py-1 bg-cyan-600 border-2 border-cyan-400 text-white pixel-box pixel-font text-[9px] sm:text-[10px]"
-              >
-                {item.name} {idx === currentPath.length - 1 && "▼"}
-              </button>
-            ))
-          )}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {currentPath.map((item, idx) => (
+            <button
+              key={`${item.level}-${idx}`}
+              onClick={() => resetToPathIndex(idx)}
+              className="px-2 py-1 bg-cyan-600 border-2 border-cyan-400 text-white pixel-box pixel-font text-[9px] sm:text-[10px]"
+            >
+              {item.name} {idx === currentPath.length - 1 && "▼"}
+            </button>
+          ))}
           {currentPath.length > 0 && (
             <button
               onClick={clearPathKeepCourse}
@@ -334,80 +407,18 @@ export default function Flashcard() {
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <button
-            onClick={addCard}
-            disabled={!hasActivePath}
-            className="flex-1 px-3 py-2 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-400 pixel-box text-white pixel-font text-[10px] sm:text-xs disabled:opacity-40"
-          >
-            ► ADD CARD
-          </button>
-          <button
-            onClick={openAIDialog}
-            disabled={loading || !hasActivePath}
-            className="flex-1 px-3 py-2 bg-pink-600 active:bg-pink-500 border-2 border-pink-400 pixel-box text-white pixel-font text-[10px] sm:text-xs disabled:opacity-40"
-          >
-            {loading ? "PROCESSING..." : "AI GENERATE"}
-          </button>
-        </div>
+        <button
+          onClick={addCard}
+          disabled={!hasActivePath || loading}
+          className="w-full px-3 py-2 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-400 pixel-box text-white pixel-font text-[10px] sm:text-xs disabled:opacity-40"
+        >
+          {loading ? "SAVING..." : "► ADD CARD"}
+        </button>
 
         <p className="text-[9px] sm:text-[10px] pixel-font text-purple-400 mt-2">
           PATH: {contextLabel}
         </p>
       </div>
-
-      {/* AI Dialog */}
-      {showAIDialog && (
-        <div className="fixed z-50 left-0 top-0 w-full h-full bg-black/90 flex items-center justify-center p-4">
-          <div className="bg-purple-950 border-4 border-purple-500 pixel-box max-w-md w-full p-4 sm:p-6 pixel-shadow relative">
-            <h3 className="pixel-font text-sm sm:text-base text-purple-300 mb-4">
-              AI GENERATE
-            </h3>
-            <p className="pixel-font text-[9px] sm:text-[10px] text-purple-400 mb-3">
-              PATH: {contextLabel}
-            </p>
-
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full mb-3 px-4 py-2 bg-cyan-600 active:bg-cyan-500 border-2 border-cyan-400 pixel-box text-white pixel-font text-[10px] sm:text-xs"
-            >
-              ► UPLOAD FILE
-            </button>
-            <input
-              type="file"
-              style={{ display: "none" }}
-              ref={fileInputRef}
-              accept=".pdf,.doc,.docx,.txt"
-            />
-
-            <div className="mb-3">
-              <p className="pixel-font text-[9px] sm:text-[10px] text-purple-300 mb-2">
-                FOLDER FILES:
-              </p>
-              {MOCK_FOLDER_FILES.map((f) => (
-                <div
-                  key={f.id}
-                  className="flex items-center gap-2 mb-2 p-2 bg-purple-900/50 border-2 border-purple-600 pixel-box"
-                >
-                  <span className="flex-1 text-[9px] sm:text-[10px] pixel-font text-purple-200">
-                    {f.name}
-                  </span>
-                  <button className="px-2 py-1 bg-green-600 border-2 border-green-400 text-white pixel-box pixel-font text-[9px]">
-                    USE
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <button
-              className="absolute top-2 right-2 text-lg pixel-font text-purple-300 hover:text-purple-100"
-              onClick={() => setShowAIDialog(false)}
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Flashcards Grid */}
       <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">

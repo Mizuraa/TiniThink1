@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Shield, Check, X, User, Lock, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 type CaptchaProps = {
   onVerify: (ok: boolean) => void;
@@ -32,8 +33,6 @@ function CaptchaVerification({ onVerify, verified }: CaptchaProps) {
     const isCorrect = userInput.toUpperCase() === captchaText;
     onVerify(isCorrect);
   };
-
-  const navigate = useNavigate();
 
   return (
     <div className="space-y-2">
@@ -182,7 +181,7 @@ function TermsModal({ isOpen, onClose, onAccept }: TermsModalProps) {
             <br />
             2. Use of the Website – You agree to use this site only for lawful
             purposes and in a way that does not infringe the rights of,
-            restrict, or inhibit anyone else’s use and enjoyment of the site.
+            restrict, or inhibit anyone else's use and enjoyment of the site.
             <br />
             <br />
             3. Intellectual Property – All content, trademarks, and materials on
@@ -222,13 +221,13 @@ function TermsModal({ isOpen, onClose, onAccept }: TermsModalProps) {
         <div className="p-6 border-t-8 border-purple-500 flex gap-4">
           <button
             onClick={onClose}
-            className="flex-1 px-6 py-3 bg-red-700 hover:bg-red-600 border-4 border-red-500 pixel-box pixel-font text-sm transition-all text-white"
+            className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 border-4 border-gray-500 pixel-box pixel-font text-sm transition-all"
           >
             DECLINE
           </button>
           <button
             onClick={onAccept}
-            className="flex-1 px-6 py-3 bg-green-700 hover:bg-green-600 border-4 border-green-500 pixel-box pixel-font text-sm transition-all text-white"
+            className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-500 border-4 border-green-400 pixel-box pixel-font text-sm transition-all"
           >
             ACCEPT
           </button>
@@ -238,50 +237,22 @@ function TermsModal({ isOpen, onClose, onAccept }: TermsModalProps) {
   );
 }
 
-type SignupModalProps = {
-  onClose: () => void;
-};
-
-// Signup Modal
-function SignupModal({ onClose }: SignupModalProps) {
+// Signup Modal Component
+function SignupModal({ onClose }: { onClose: () => void }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [age, setAge] = useState("");
+  const [school, setSchool] = useState("");
   const [showPwd, setShowPwd] = useState(false);
-  const [captchaVerified, setCaptchaVerified] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const [enable2FA, setEnable2FA] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const validatePassword = () => {
-    const hasSpecial = /[_@#$%^&*!]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const hasCapitalFirst = /^[A-Z]/.test(password);
-    const hasLength = password.length >= 8;
-    return hasSpecial && hasNumber && hasCapitalFirst && hasLength;
-  };
-
-  const navigate = useNavigate();
-
-  const handleSignup = () => {
-    if (!username.trim()) {
-      alert("⚠️ ENTER USERNAME");
-      return;
-    }
-
-    if (!email.trim()) {
-      alert("⚠️ ENTER EMAIL");
-      return;
-    }
-
-    if (!validatePassword()) {
-      alert("⚠️ PASSWORD REQUIREMENTS NOT MET");
-      return;
-    }
-
-    if (!captchaVerified) {
-      alert("⚠️ COMPLETE CAPTCHA");
+  async function handleSignup() {
+    if (!email.trim() || !password.trim() || !username.trim()) {
+      alert("⚠️ FILL ALL REQUIRED FIELDS");
       return;
     }
 
@@ -290,39 +261,69 @@ function SignupModal({ onClose }: SignupModalProps) {
       return;
     }
 
+    if (!captchaVerified) {
+      alert("⚠️ COMPLETE CAPTCHA");
+      return;
+    }
+
     setLoading(true);
 
-    setTimeout(() => {
-      navigate("/dashboard");
-      setLoading(false);
+    try {
+      // Sign up with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error("User creation failed");
+      }
+
+      // Create profile
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: authData.user.id,
+        username: username.trim(),
+        email: email.trim(),
+        age: age ? parseInt(age) : null,
+        school: school.trim() || null,
+        status: "online",
+      });
+
+      if (profileError) throw profileError;
+
+      alert("✓ ACCOUNT CREATED! CHECK EMAIL TO VERIFY.");
       onClose();
-    }, 1000);
-  };
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      alert("⚠️ ERROR: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-purple-950 border-8 border-purple-500 pixel-box-lg max-w-lg w-full my-8 pixel-shadow-lg">
+      <div className="bg-purple-950 border-8 border-purple-500 pixel-box-lg max-w-2xl w-full my-8 pixel-shadow-lg">
         <div className="p-6 border-b-8 border-purple-500">
           <h2 className="text-2xl pixel-font text-purple-200">
             CREATE ACCOUNT
           </h2>
-          <p className="text-sm text-purple-400 mt-1 pixel-font">
-            JOIN TINITHINK
-          </p>
         </div>
 
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
           {/* Username */}
           <div className="space-y-2">
             <label className="text-xs text-purple-300 pixel-font flex items-center gap-2">
-              <User className="w-4 h-4" />
-              USERNAME
+              <User size={16} />
+              USERNAME *
             </label>
             <input
               type="text"
+              placeholder="PLAYER NAME"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="CHOOSE USERNAME"
               className="w-full px-4 py-3 bg-purple-950/50 border-4 border-purple-500 pixel-box text-white pixel-font text-sm focus:outline-none focus:border-purple-400"
             />
           </div>
@@ -330,14 +331,14 @@ function SignupModal({ onClose }: SignupModalProps) {
           {/* Email */}
           <div className="space-y-2">
             <label className="text-xs text-purple-300 pixel-font flex items-center gap-2">
-              <Mail className="w-5 h-5" />
-              EMAIL
+              <Mail size={16} />
+              EMAIL *
             </label>
             <input
               type="email"
+              placeholder="YOUR@EMAIL.COM"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="YOUR@EMAIL.COM"
               className="w-full px-4 py-3 bg-purple-950/50 border-4 border-purple-500 pixel-box text-white pixel-font text-sm focus:outline-none focus:border-purple-400"
             />
           </div>
@@ -345,43 +346,73 @@ function SignupModal({ onClose }: SignupModalProps) {
           {/* Password */}
           <div className="space-y-2">
             <label className="text-xs text-purple-300 pixel-font flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              PASSWORD
+              <Lock size={16} />
+              PASSWORD *
             </label>
             <div className="relative">
               <input
                 type={showPwd ? "text" : "password"}
+                placeholder="PASSWORD"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="STRONG PASSWORD"
                 className="w-full px-4 py-3 pr-12 bg-purple-950/50 border-4 border-purple-500 pixel-box text-white pixel-font text-sm focus:outline-none focus:border-purple-400"
               />
               <button
                 type="button"
-                onClick={() => setShowPwd((prev) => !prev)}
+                onClick={() => setShowPwd((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300"
               >
                 {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            {password && <PasswordStrength password={password} />}
+            <PasswordStrength password={password} />
           </div>
 
-          {/* 2FA Toggle */}
-          <div className="flex items-center gap-3 p-4 bg-purple-900/50 border-4 border-purple-600 pixel-box">
+          {/* Age */}
+          <div className="space-y-2">
+            <label className="text-xs text-purple-300 pixel-font">AGE</label>
+            <input
+              type="number"
+              placeholder="YOUR AGE"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              className="w-full px-4 py-3 bg-purple-950/50 border-4 border-purple-500 pixel-box text-white pixel-font text-sm focus:outline-none focus:border-purple-400"
+            />
+          </div>
+
+          {/* School */}
+          <div className="space-y-2">
+            <label className="text-xs text-purple-300 pixel-font">SCHOOL</label>
+            <input
+              type="text"
+              placeholder="SCHOOL NAME"
+              value={school}
+              onChange={(e) => setSchool(e.target.value)}
+              className="w-full px-4 py-3 bg-purple-950/50 border-4 border-purple-500 pixel-box text-white pixel-font text-sm focus:outline-none focus:border-purple-400"
+            />
+          </div>
+
+          {/* Terms */}
+          <div className="flex items-center gap-3 p-4 bg-purple-900/30 pixel-box border-4 border-purple-600">
             <input
               type="checkbox"
-              id="enable2fa"
-              checked={enable2FA}
-              onChange={(e) => setEnable2FA(e.target.checked)}
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              id="terms"
               className="w-5 h-5"
             />
             <label
-              htmlFor="enable2fa"
-              className="text-xs pixel-font text-purple-300 flex items-center gap-2"
+              htmlFor="terms"
+              className="text-xs text-purple-300 pixel-font flex-1"
             >
-              <Shield className="w-5 h-5 text-cyan-400" />
-              ENABLE 2FA
+              I ACCEPT THE{" "}
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="text-cyan-400 underline"
+              >
+                TERMS & CONDITIONS
+              </button>
             </label>
           </div>
 
@@ -390,30 +421,6 @@ function SignupModal({ onClose }: SignupModalProps) {
             onVerify={setCaptchaVerified}
             verified={captchaVerified}
           />
-
-          {/* Terms */}
-          <div className="flex items-start gap-3 p-4 bg-purple-900/50 border-4 border-purple-600 pixel-box">
-            <input
-              type="checkbox"
-              id="terms"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="w-5 h-5 mt-0.5"
-            />
-            <label
-              htmlFor="terms"
-              className="text-xs pixel-font text-purple-300 flex-1"
-            >
-              I ACCEPT{" "}
-              <button
-                type="button"
-                onClick={() => setShowTermsModal(true)}
-                className="text-cyan-400 hover:text-cyan-300 underline font-bold"
-              >
-                TERMS & CONDITIONS
-              </button>
-            </label>
-          </div>
         </div>
 
         <div className="p-6 border-t-8 border-purple-500 flex gap-4">
@@ -459,7 +466,7 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  async function handleLogin() {
     if (!email.trim()) {
       alert("⚠️ ENTER EMAIL");
       return;
@@ -477,11 +484,28 @@ export default function Login() {
 
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      if (error) throw error;
+
+      // Update status to online
+      await supabase
+        .from("profiles")
+        .update({ status: "online" })
+        .eq("id", data.user.id);
+
       navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      alert("⚠️ LOGIN FAILED: " + error.message);
+    } finally {
       setLoading(false);
-    }, 1000);
-  };
+    }
+  }
 
   return (
     <div
